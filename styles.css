@@ -2,6 +2,10 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
     margin: 0;
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -10,19 +14,146 @@ body {
 }
 
 .app-header {
-    background: #1565c0;
+    background: #1d4ed8;
     color: #ffffff;
-    padding: 1rem;
-    text-align: center;
+    padding: 1.25rem 1rem;
 }
 
 .app-header h1 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
 }
 
 main {
     max-width: 480px;
     margin: 0 auto;
     padding: 1rem;
+}
+
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+}
+
+/* Botones */
+.btn {
+    background: #1d4ed8;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #1e40af;
+}
+
+.btn--secundario {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn--secundario:hover {
+    background: #d1d5db;
+}
+
+.acciones {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Formularios */
+label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+}
+
+textarea,
+select {
+    width: 100%;
+    padding: 0.6rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font: inherit;
+}
+
+/* Avisos */
+.aviso {
+    margin: 1rem 0 0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.aviso p {
+    margin: 0 0 0.75rem;
+}
+
+.aviso--info {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+}
+
+.aviso--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+/* Resultado e indicador de calidad de señal */
+.resultado {
+    margin-top: 1rem;
+}
+
+.resultado dl {
+    margin: 0.75rem 0 0;
+}
+
+.resultado dt {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+}
+
+.resultado dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.etiqueta {
+    display: inline-block;
+    margin: 0;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.etiqueta--alta {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.etiqueta--aproximada {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Plan B */
+.plan-b {
+    margin-top: 1rem;
 }

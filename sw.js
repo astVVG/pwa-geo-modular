@@ -1,5 +1,5 @@
 // sw.js - Service Worker (App Shell precacheado, sin async/await)
-const CACHE_NAME = 'pwa-geo-modular-v1';
+const CACHE_NAME = 'pwa-geo-modular-v3';
 
 const APP_SHELL = [
     './',
