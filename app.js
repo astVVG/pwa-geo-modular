@@ -31,6 +31,9 @@ const ayudaPermiso = document.getElementById('ayuda-permiso');
 const zonaManual = document.getElementById('zona-manual');
 const formReporte = document.getElementById('form-reporte');
 
+// Última ubicación resuelta en esta sesión: se reutiliza al enviar el reporte
+let ultimaUbicacion = null;
+
 // ---------------------------------------------------------------
 // 3. Helpers de UI (consumidos por el Fragmento C)
 // ---------------------------------------------------------------
@@ -57,6 +60,7 @@ function habilitarSelectorManualZona() {
 
 // Indicador de calidad de señal: < 30 m = GPS alto, >= 30 m = aproximada
 function renderizarResultadoUbicacion(ubicacion) {
+    ultimaUbicacion = ubicacion;
     ocultarCargando();
     mensajeError.hidden = true;
     selectorManual.hidden = true;
@@ -103,6 +107,7 @@ function enviarReporteConUbicacion(datosFormulario) {
 }
 
 // Ejemplo de uso 2: Lectura rápida de baja precisión para filtrar sucursales cercanas
+// (ejemplo de reutilización del enunciado; no está conectado a la UI)
 function buscarSucursalesCercanas() {
     return obtenerUbicacionActual({ enableHighAccuracy: false, maximumAge: 60000 })
         .then((ubicacion) => {
@@ -168,19 +173,28 @@ formReporte.addEventListener('submit', (evento) => {
         descripcion: document.getElementById('descripcion').value.trim()
     };
 
-    // No se dispara el diálogo nativo desde aquí: solo se lee si ya hay permiso
+    // 1) Ya existe una ubicación resuelta: se adjunta sin volver a pedir el GPS
+    if (ultimaUbicacion) {
+        const paqueteCompleto = Object.assign({}, datosFormulario, {
+            coordenadas: ultimaUbicacion
+        });
+        console.log('Paquete listo para enviar o encolar en IndexedDB:', paqueteCompleto);
+        return;
+    }
+
+    // 2) Plan B: se respeta la zona elegida manualmente
+    if (zonaManual.value) {
+        const paqueteManual = Object.assign({}, datosFormulario, {
+            zonaManual: zonaManual.value
+        });
+        console.log('Paquete con zona manual:', paqueteManual);
+        return;
+    }
+
+    // 3) Sin ubicación ni zona: solo se lee si ya hay permiso (no se dispara el diálogo nativo)
     consultarEstadoPermisoGeo().then((estado) => {
         if (estado === 'granted') {
             return enviarReporteConUbicacion(datosFormulario);
-        }
-
-        if (zonaManual.value) {
-            // Plan B: se envía con la zona elegida manualmente
-            const paqueteManual = Object.assign({}, datosFormulario, {
-                zonaManual: zonaManual.value
-            });
-            console.log('Paquete con zona manual:', paqueteManual);
-            return;
         }
 
         mostrarMensajeError('Adjunta tu ubicación o elige una zona antes de enviar el reporte.');
