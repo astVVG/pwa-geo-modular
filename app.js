@@ -1,8 +1,10 @@
-// app.js - Lógica de UI, pre-permiso y consumo del helper
+/**
+ * Lógica de la interfaz: explica al usuario por qué se pide la ubicación,
+ * la obtiene con geo-helper.js, muestra su precisión y, si no se puede,
+ * ofrece elegir la zona a mano.
+ */
 
-// ---------------------------------------------------------------
-// 1. Registro del Service Worker
-// ---------------------------------------------------------------
+/** Registra el Service Worker al cargar la página para que la app funcione sin conexión. */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -15,9 +17,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ---------------------------------------------------------------
-// 2. Referencias al DOM
-// ---------------------------------------------------------------
 const btnAdjuntar = document.getElementById('btn-adjuntar-ubicacion');
 const btnConfirmar = document.getElementById('btn-confirmar-ubicacion');
 const btnCancelar = document.getElementById('btn-cancelar-ubicacion');
@@ -31,12 +30,10 @@ const ayudaPermiso = document.getElementById('ayuda-permiso');
 const zonaManual = document.getElementById('zona-manual');
 const formReporte = document.getElementById('form-reporte');
 
-// Última ubicación resuelta en esta sesión: se reutiliza al enviar el reporte
+/** Guarda la última ubicación obtenida para reutilizarla al enviar el reporte sin volver a pedir el GPS. */
 let ultimaUbicacion = null;
 
-// ---------------------------------------------------------------
-// 3. Helpers de UI (consumidos por el Fragmento C)
-// ---------------------------------------------------------------
+/** Muestra un aviso de carga y oculta el error y el resultado anteriores. */
 function mostrarCargando(texto) {
     mensajeError.hidden = true;
     resultadoUbicacion.hidden = true;
@@ -44,21 +41,28 @@ function mostrarCargando(texto) {
     estadoCarga.hidden = false;
 }
 
+/** Oculta el aviso de carga. */
 function ocultarCargando() {
     estadoCarga.hidden = true;
 }
 
+/** Quita el aviso de carga y muestra el mensaje de error recibido. */
 function mostrarMensajeError(texto) {
     ocultarCargando();
     mensajeError.textContent = texto;
     mensajeError.hidden = false;
 }
 
+/** Muestra el selector para que el usuario elija su zona a mano (Plan B). */
 function habilitarSelectorManualZona() {
     selectorManual.hidden = false;
 }
 
-// Indicador de calidad de señal: < 30 m = GPS alto, >= 30 m = aproximada
+/**
+ * Guarda la ubicación recibida y la muestra en pantalla.
+ * Si el margen de error es menor de 30 metros la marca como GPS de alta precisión;
+ * si no, como ubicación aproximada por Wi-Fi o IP.
+ */
 function renderizarResultadoUbicacion(ubicacion) {
     ultimaUbicacion = ubicacion;
     ocultarCargando();
@@ -83,11 +87,10 @@ function renderizarResultadoUbicacion(ubicacion) {
     resultadoUbicacion.hidden = false;
 }
 
-// ---------------------------------------------------------------
-// 4. Fragmento C: Reutilización desde múltiples funciones
-// ---------------------------------------------------------------
-
-// Ejemplo de uso 1: Adjuntar coordenadas al enviar un reporte técnico
+/**
+ * Ejemplo 1 del enunciado: pide coordenadas frescas y las une a los datos del reporte.
+ * Si no se consiguen, muestra el motivo y abre el selector manual sin bloquear al usuario.
+ */
 function enviarReporteConUbicacion(datosFormulario) {
     mostrarCargando('Obteniendo coordenadas...');
 
@@ -102,12 +105,14 @@ function enviarReporteConUbicacion(datosFormulario) {
         .catch((error) => {
             console.warn('[Geo] Fallback activado:', error.message);
             mostrarMensajeError(error.message);
-            habilitarSelectorManualZona(); // Plan B sin bloquear al usuario
+            habilitarSelectorManualZona();
         });
 }
 
-// Ejemplo de uso 2: Lectura rápida de baja precisión para filtrar sucursales cercanas
-// (ejemplo de reutilización del enunciado; no está conectado a la UI)
+/**
+ * Ejemplo 2 del enunciado: lectura rápida y de baja precisión para buscar sucursales cercanas.
+ * No está conectada a la interfaz; solo muestra que el helper se puede reutilizar.
+ */
 function buscarSucursalesCercanas() {
     return obtenerUbicacionActual({ enableHighAccuracy: false, maximumAge: 60000 })
         .then((ubicacion) => {
@@ -115,11 +120,10 @@ function buscarSucursalesCercanas() {
         });
 }
 
-// ---------------------------------------------------------------
-// 5. Flujo de Pre-Permiso (botón "Adjuntar mi ubicación")
-// ---------------------------------------------------------------
-
-// Lectura real: solo se invoca desde un click del usuario (regla de iOS)
+/**
+ * Pide la ubicación real y la muestra; si falla, explica el motivo y abre el selector manual.
+ * Solo se llama tras un clic del usuario, porque Safari en iPhone ignora las peticiones automáticas.
+ */
 function leerUbicacion() {
     tarjetaPrePermiso.hidden = true;
     mostrarCargando('Obteniendo coordenadas...');
@@ -131,41 +135,49 @@ function leerUbicacion() {
         .catch((error) => {
             console.warn('[Geo] Fallback activado:', error.message);
             mostrarMensajeError(error.message);
-            habilitarSelectorManualZona(); // Plan B sin bloquear al usuario
+            habilitarSelectorManualZona();
         });
 }
 
+/**
+ * Botón "Adjuntar mi ubicación": decide qué hacer según el permiso actual.
+ * 1. Si ya está permitido, lee la ubicación directamente.
+ * 2. Si aún no se ha preguntado, muestra la tarjeta que explica por qué se necesita.
+ * 3. Si está bloqueado, abre el selector manual y explica cómo reactivarlo.
+ */
 btnAdjuntar.addEventListener('click', () => {
     mensajeError.hidden = true;
     resultadoUbicacion.hidden = true;
 
     consultarEstadoPermisoGeo().then((estado) => {
         if (estado === 'granted') {
-            // Ya tiene permiso: lectura directa
             leerUbicacion();
         } else if (estado === 'prompt') {
-            // Explicación contextual antes del diálogo nativo
             tarjetaPrePermiso.hidden = false;
         } else {
-            // 'denied': Plan B inmediato e instrucciones para reactivar
             ayudaPermiso.hidden = false;
             habilitarSelectorManualZona();
         }
     });
 });
 
+/** Botón "Compartir mi ubicación": tras leer la explicación, el usuario acepta y se pide la ubicación. */
 btnConfirmar.addEventListener('click', () => {
     leerUbicacion();
 });
 
+/** Botón "Ahora no": cierra la explicación y ofrece elegir la zona a mano. */
 btnCancelar.addEventListener('click', () => {
     tarjetaPrePermiso.hidden = true;
     habilitarSelectorManualZona();
 });
 
-// ---------------------------------------------------------------
-// 6. Envío del formulario de reporte
-// ---------------------------------------------------------------
+/**
+ * Envía el reporte con la mejor ubicación disponible, en este orden:
+ * 1. La última ubicación ya obtenida.
+ * 2. La zona elegida a mano.
+ * 3. Una lectura nueva solo si el permiso ya está dado; si no, pide al usuario una de las dos.
+ */
 formReporte.addEventListener('submit', (evento) => {
     evento.preventDefault();
 
@@ -173,7 +185,6 @@ formReporte.addEventListener('submit', (evento) => {
         descripcion: document.getElementById('descripcion').value.trim()
     };
 
-    // 1) Ya existe una ubicación resuelta: se adjunta sin volver a pedir el GPS
     if (ultimaUbicacion) {
         const paqueteCompleto = Object.assign({}, datosFormulario, {
             coordenadas: ultimaUbicacion
@@ -182,7 +193,6 @@ formReporte.addEventListener('submit', (evento) => {
         return;
     }
 
-    // 2) Plan B: se respeta la zona elegida manualmente
     if (zonaManual.value) {
         const paqueteManual = Object.assign({}, datosFormulario, {
             zonaManual: zonaManual.value
@@ -191,7 +201,6 @@ formReporte.addEventListener('submit', (evento) => {
         return;
     }
 
-    // 3) Sin ubicación ni zona: solo se lee si ya hay permiso (no se dispara el diálogo nativo)
     consultarEstadoPermisoGeo().then((estado) => {
         if (estado === 'granted') {
             return enviarReporteConUbicacion(datosFormulario);
